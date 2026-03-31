@@ -19,7 +19,7 @@ A full-stack Expense Tracker web application built using **Django** and **Django
 
 * **Backend:** Django, Django REST Framework
 * **Frontend:** HTML, CSS (can be extended to React)
-* **Database:** SQLite
+* **Database:** PostgreSQL
 * **Version Control:** Git & GitHub
 
 ---
