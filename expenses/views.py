@@ -9,7 +9,7 @@ from django.contrib.auth.models import User
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
-
+from rest_framework.permissions import IsAuthenticated
 
 
 
@@ -18,6 +18,7 @@ from rest_framework import status
 class ExpenseViewSet(viewsets.ModelViewSet):
     queryset = Expense.objects.all()
     serializer_class = ExpenseSerializer
+    permission_classes = [IsAuthenticated]
     filter_backends = [
         DjangoFilterBackend,
         filters.SearchFilter,
@@ -28,7 +29,12 @@ class ExpenseViewSet(viewsets.ModelViewSet):
     ordering_fields = ['amount','date','created_at']
     ordering = ['-date']
 
-
+    def get_queryset(self):
+        return Expense.objects.filter(user=self.request.user)
+    
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+    
     
 @api_view(['POST'])
 def register_user(request):
