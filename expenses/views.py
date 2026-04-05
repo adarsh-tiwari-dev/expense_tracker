@@ -3,6 +3,10 @@ from rest_framework import viewsets, filters
 from django_filters.rest_framework import DjangoFilterBackend
 from .models import Expense
 from .serializers import ExpenseSerializer
+from django.db.models import Sum, Count, Avg, FloatField
+from django.db.models.functions import TruncMonth
+from rest_framework.decorators import action
+from rest_framework.response import Response
 
 
 from django.contrib.auth.models import User
@@ -36,7 +40,22 @@ class ExpenseViewSet(viewsets.ModelViewSet):
     
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
-    
+
+    @action(detail=False, methods=['get'])
+    def summary(self, request):
+        data = (
+            Expense.objects
+            .filter(user=request.user)
+            .annotate(month=TruncMonth('date'))
+            .values('month')
+            .annotate(
+                total=Sum('amount',output_field=FloatField()),
+                count=Count('id'),
+                average=Avg('amount', output_field=FloatField())
+            )
+            .order_by('month')
+        )
+        return Response(data)
     
 @api_view(['POST'])
 def register_user(request):
