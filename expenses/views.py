@@ -11,6 +11,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from .permissions import IsOwner
+from rest_framework_simplejwt.tokens import RefreshToken
 
 
 
@@ -47,3 +48,16 @@ def register_user(request):
 
     user = User.objects.create_user(username=username, password=password)
     return Response({"message": "User created successfully"}, status=201)
+
+
+@api_view(['POST'])
+def logout_user(request):
+    try:
+        refresh_token = request.data["refresh"]
+        token = RefreshToken(refresh_token)
+        token.blacklist()
+        return Response({"message": "Logged out successfully"})
+    except Exception as e:
+        return Response({"error": "Invalid token"},status=400)
+
+   
