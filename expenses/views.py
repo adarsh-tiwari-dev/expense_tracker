@@ -18,6 +18,8 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from .permissions import IsOwner
 from rest_framework_simplejwt.tokens import RefreshToken
+from datetime import datetime
+from .models import Budget
 
 
 
@@ -58,6 +60,38 @@ class ExpenseViewSet(viewsets.ModelViewSet):
             .order_by('month')
         )
         return Response(data)
+    
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        response = super().list(request, *args, **kwargs)
+
+        for item in response.data['results']:
+            category = item['category']
+            date = item['date']
+
+            month = datetime.strptime(date, "%Y-%m-%d").date().replace(day=1)
+
+            total = Expense.objects.filter(
+                user=request.user,
+                category=category,
+                date__month=month.month
+            ).aggregate(total=Sum('amount'))['total'] or 0
+
+            budget = Budget.objects.filter(
+                user=request.user,
+                category=category,
+                month__month=month.month
+            ).first()
+
+            item['budget_exceeded'] = False
+
+            if budget and total > budget.limit:
+                item['budget_exceeded'] = True
+
+        return response
+
+
+
     @action(detail=False, methods=['get'])
     def category_breakdown(self, request):
         queryset = Expense.objects.filter(user=request.user)
