@@ -7,6 +7,8 @@ from django.db.models import Sum, Count, Avg, FloatField
 from django.db.models.functions import TruncMonth
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from django.db.models import Sum, F, FloatField, ExpressionWrapper
+
 
 
 from django.contrib.auth.models import User
@@ -56,7 +58,30 @@ class ExpenseViewSet(viewsets.ModelViewSet):
             .order_by('month')
         )
         return Response(data)
-    
+    @action(detail=False, methods=['get'])
+    def category_breakdown(self, request):
+        queryset = Expense.objects.filter(user=request.user)
+
+        total_expense = queryset.aggregate(total=Sum('amount'))['total'] or 0
+
+        data = (
+            queryset
+            .values('category')
+            .annotate(total=Sum('amount'))
+        )
+
+        result = []
+
+        for item in data:
+            percentage = (item['total'] / total_expense * 100) if total_expense > 0 else 0
+            result.append({
+                "category": item['category'],
+                "total": item['total'],
+                "percentage": round(percentage, 2)
+            })
+
+        return Response(result)
+
 @api_view(['POST'])
 def register_user(request):
     username = request.data.get('username')
