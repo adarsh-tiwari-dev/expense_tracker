@@ -9,6 +9,9 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.db.models import Sum, F, FloatField, ExpressionWrapper
 
+import csv
+from django.http import StreamingHttpResponse
+
 
 
 from django.contrib.auth.models import User
@@ -21,6 +24,11 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from datetime import datetime
 from .models import Budget
 
+
+
+import csv
+from django.http import  StreamingHttpResponse
+from rest_framework.decorators import action
 
 
 # Create your views here.
@@ -115,6 +123,42 @@ class ExpenseViewSet(viewsets.ModelViewSet):
             })
 
         return Response(result)
+    
+
+    @action(detail=False, methods=['get'])
+    def export_csv(self, request):
+        queryset = self.get_queryset()
+
+        def generate():
+            yield 'id,amount,category,date,description\n'
+            for expense in queryset:
+                yield f"{expense.id},{expense.amount},{expense.category},{expense.date},{expense.description}\n"
+
+        response = StreamingHttpResponse(generate(), content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="expenses.csv"'
+
+        return response
+    
+
+
+
+
+    @action(detail=False, methods=['get'])
+    def export_csv(self, request):
+        queryset = self.get_queryset()
+
+        def generate():
+            yield 'id,amount,category,date,description\n'
+            for expense in queryset:
+                yield f"{expense.id},{expense.amount},{expense.category},{expense.date},{expense.description}\n"
+
+        response = StreamingHttpResponse(generate(), content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="expenses.csv"'
+
+        return response
+    
+
+
 
 @api_view(['POST'])
 def register_user(request):
